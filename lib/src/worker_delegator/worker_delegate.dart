@@ -1,6 +1,6 @@
-import '../flutter_constants.dart';
-import 'default_delegate.dart';
-import 'js_delegate.dart';
+import 'package:isolated_worker/src/flutter_constants.dart';
+import 'package:isolated_worker/src/worker_delegator/default_delegate.dart';
+import 'package:isolated_worker/src/worker_delegator/js_delegate.dart';
 
 /// A worker delegate for both Dart's Isolate and Web Worker.
 abstract class WorkerDelegate<Q, R> {
@@ -43,7 +43,7 @@ class _AdaptiveWorkerDelegate<Q, R> implements WorkerDelegate<Q, R> {
   @override
   DefaultDelegate<Q, R> get defaultDelegate {
     if (_defaultDelegate != null) {
-      return _defaultDelegate!;
+      return _defaultDelegate;
     }
     throw UnsupportedError('defaultDelegate');
   }
@@ -53,7 +53,7 @@ class _AdaptiveWorkerDelegate<Q, R> implements WorkerDelegate<Q, R> {
   @override
   JsDelegate get jsDelegate {
     if (_jsDelegate != null) {
-      return _jsDelegate!;
+      return _jsDelegate;
     }
     throw UnsupportedError('jsDelegate');
   }

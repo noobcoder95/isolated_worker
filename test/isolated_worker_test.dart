@@ -121,16 +121,11 @@ void main() {
 
   group('Test [WorkerDelegator] on Dart VM\n', () {
     setUpAll(() {
-      const JsDelegate dummyJsDelegate = JsDelegate(callback: 'callback');
-
-      const DefaultDelegate<int, List<int>> dummyDefDelegate =
-          DefaultDelegate<int, List<int>>(callback: isolatedWork);
-
-      const WorkerDelegate<int, List<int>> dummyWorkerDelegate =
-          WorkerDelegate<int, List<int>>(
-        key: 'dummy1to9',
-        defaultDelegate: dummyDefDelegate,
-        jsDelegate: dummyJsDelegate,
+      const WorkerDelegate dummyWorkerDelegate =
+      WorkerDelegate(
+          key: 'dummy1to9',
+          defaultDelegate: DefaultDelegate<int, List<int>>(callback: isolatedWork),
+          jsDelegate: JsDelegate(callback: 'callback'),
       );
 
       WorkerDelegator().addDelegate(dummyWorkerDelegate);
