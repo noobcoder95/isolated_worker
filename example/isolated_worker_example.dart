@@ -5,5 +5,5 @@ void tryPrint(void _) {
 }
 
 void main() {
-  IsolatedWorker().run(tryPrint, null).then((_) => IsolatedWorker().close());
+  IsolatedWorker.create().run(tryPrint, null).then((_) => IsolatedWorker.create().close());
 }

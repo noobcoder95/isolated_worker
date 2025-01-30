@@ -13,7 +13,7 @@ Future<void> delayedFunc([void noArgs]) {
 
 void main() {
   tearDownAll(() {
-    IsolatedWorker().close();
+    IsolatedWorker.create().close();
   });
 
   group('Test [IsolatedWorker]\n', () {
@@ -21,7 +21,7 @@ void main() {
         'Verify [isolatedWork] running with [IsolatedWorker]\n'
         'returns a List of integers containing 1 to 9', () {
       expectLater(
-        IsolatedWorker().run(isolatedWork, 9).then(
+        IsolatedWorker.create().run(isolatedWork, 9).then(
           (value) {
             expect(value, isA<List<int>>());
 
@@ -39,8 +39,8 @@ void main() {
         'Verify 2 [isolatedWork]s running with [IsolatedWorker]\n'
         'returns 2 Lists of integers containing the expected numbers',
         () async {
-      final Future<List<int>> result1 = IsolatedWorker().run(isolatedWork, 10);
-      final Future<List<int>> result2 = IsolatedWorker().run(isolatedWork, 15);
+      final Future<List<int>> result1 = IsolatedWorker.create().run(isolatedWork, 10);
+      final Future<List<int>> result2 = IsolatedWorker.create().run(isolatedWork, 15);
       result1.then((value) {
         expect(value, isA<List<int>>());
 
@@ -64,10 +64,10 @@ void main() {
         'Verify 4 [isolatedWork]s running with [IsolatedWorker]\n'
         'returns 4 Lists of integers containing the expected numbers',
         () async {
-      final Future<List<int>> result1 = IsolatedWorker().run(isolatedWork, 10);
-      final Future<List<int>> result2 = IsolatedWorker().run(isolatedWork, 15);
-      final Future<List<int>> result3 = IsolatedWorker().run(isolatedWork, 20);
-      final Future<List<int>> result4 = IsolatedWorker().run(isolatedWork, 25);
+      final Future<List<int>> result1 = IsolatedWorker.create().run(isolatedWork, 10);
+      final Future<List<int>> result2 = IsolatedWorker.create().run(isolatedWork, 15);
+      final Future<List<int>> result3 = IsolatedWorker.create().run(isolatedWork, 20);
+      final Future<List<int>> result4 = IsolatedWorker.create().run(isolatedWork, 25);
       result1.then((value) {
         expect(value, isA<List<int>>());
 
