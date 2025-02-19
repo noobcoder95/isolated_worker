@@ -43,7 +43,7 @@ class _AdaptiveWorkerDelegate<Q, R> implements WorkerDelegate<Q, R> {
   @override
   DefaultDelegate<Q, R> get defaultDelegate {
     if (_defaultDelegate != null) {
-      return _defaultDelegate!;
+      return _defaultDelegate;
     }
     throw UnsupportedError('defaultDelegate');
   }
@@ -53,7 +53,7 @@ class _AdaptiveWorkerDelegate<Q, R> implements WorkerDelegate<Q, R> {
   @override
   JsDelegate get jsDelegate {
     if (_jsDelegate != null) {
-      return _jsDelegate!;
+      return _jsDelegate;
     }
     throw UnsupportedError('jsDelegate');
   }

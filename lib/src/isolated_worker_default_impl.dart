@@ -95,7 +95,7 @@ class IsolatedWorkerImpl implements IsolatedWorker {
       id: id,
       callback: callback,
       message: message,
-    ));
+    ),);
     return callbackCompleter.future;
   }
 
@@ -130,7 +130,7 @@ class IsolatedWorkerImpl implements IsolatedWorker {
     _closeWithError(IsolatedWorkerUnexpectedShutdownException(
       error: errorString,
       stackTrace: stackTrace,
-    ));
+    ),);
   }
 
   bool _isClosed = false;
