@@ -26,7 +26,7 @@ class JsIsolatedWorkerImpl implements JsIsolatedWorker {
   Future<web.Worker?> get _worker => _workerCompleter.future;
 
   StreamSubscription<web.MessageEvent>? _workerMessages;
-  late dynamic _eventListener;
+  dynamic _eventListener;
 
   int _callbackMessageId = 0;
 
@@ -35,12 +35,13 @@ class JsIsolatedWorkerImpl implements JsIsolatedWorker {
       final web.Worker worker = web.Worker('worker.js'.toJS);
       _workerCompleter.complete(worker);
 
-      final StreamController<web.MessageEvent> messageStreamController = StreamController.broadcast();
+      final StreamController<web.MessageEvent> messageStreamController =
+      StreamController.broadcast();
       _eventListener = (web.Event event) {
         if (!messageStreamController.isClosed) {
           messageStreamController.add(event as web.MessageEvent);
         }
-      };
+      }.toJS;
       worker.addEventListener('message', _eventListener as web.EventListener);
       _workerMessages = messageStreamController.stream.listen(_workerMessageReceiver);
     } catch (e) {
@@ -56,8 +57,8 @@ class JsIsolatedWorkerImpl implements JsIsolatedWorker {
 
   void _workerMessageReceiver(web.MessageEvent message) {
     final List messageData = [];
-    if(message.data != null) {
-      final jsArray = message.data! as JSArray;
+    if (message.data != null) {
+      final JSArray jsArray = message.data! as JSArray;
       for (var i = 0; i < jsArray.length; i++) {
         messageData.add(jsArray[i]);
       }
