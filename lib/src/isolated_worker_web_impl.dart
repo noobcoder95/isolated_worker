@@ -1,8 +1,8 @@
-import 'dart:async' show Completer, StreamSubscription;
+import 'dart:async' show Completer, StreamController, StreamSubscription;
 import 'dart:collection' show LinkedHashMap;
-import 'dart:html';
-
+import 'dart:js_interop';
 import 'package:isolated_worker/src/isolated_worker_web.dart';
+import 'package:web/web.dart' as web;
 
 const int _kMaxCallbackMessageId = 1000;
 
@@ -15,61 +15,55 @@ class JsIsolatedWorkerImpl implements JsIsolatedWorker {
 
   static final JsIsolatedWorkerImpl _instance = JsIsolatedWorkerImpl._();
 
-  /// This should've been [LinkedHashMap] with type arguments of:
-  /// - `FutureOr<R> Function(Q)`
-  /// - `Completer<R>`
-  ///
-  /// It is now a [List] consists of:
-  /// - [0] is `id`
-  /// - [1] is `functionName`
-  /// - [2] is `arguments`
   final LinkedHashMap<List<dynamic>, dynamic> _callbackObjects =
-      LinkedHashMap<List<dynamic>, dynamic>(
-    equals: (List<dynamic> a, List<dynamic> b) {
-      return a[0] == b[0];
-    },
-    hashCode: (List<dynamic> callbackObject) {
-      return callbackObject[0].hashCode;
-    },
+  LinkedHashMap<List<dynamic>, dynamic>(
+    equals: (List<dynamic> a, List<dynamic> b) => a[0] == b[0],
+    hashCode: (List<dynamic> callbackObject) => callbackObject[0].hashCode,
   );
 
-  final Completer<Worker?> _workerCompleter = Completer<Worker?>();
+  final Completer<web.Worker?> _workerCompleter = Completer<web.Worker?>();
 
-  Future<Worker?> get _worker => _workerCompleter.future;
+  Future<web.Worker?> get _worker => _workerCompleter.future;
 
-  // ignore: cancel_subscriptions, use_late_for_private_fields_and_variables
-  StreamSubscription<MessageEvent>? _workerMessages;
+  StreamSubscription<web.MessageEvent>? _workerMessages;
+  late dynamic _eventListener;
 
-  /// current count for next id
   int _callbackMessageId = 0;
 
   void _init() {
-    if (Worker.supported) {
-      final Worker worker = Worker('worker.js');
-
+    try {
+      final web.Worker worker = web.Worker('worker.js'.toJS);
       _workerCompleter.complete(worker);
-      _workerMessages = worker.onMessage.listen(_workerMessageReceiver);
-    } else {
+
+      final StreamController<web.MessageEvent> messageStreamController = StreamController.broadcast();
+      _eventListener = (web.Event event) {
+        if (!messageStreamController.isClosed) {
+          messageStreamController.add(event as web.MessageEvent);
+        }
+      };
+      worker.addEventListener('message', _eventListener as web.EventListener);
+      _workerMessages = messageStreamController.stream.listen(_workerMessageReceiver);
+    } catch (e) {
       _workerCompleter.complete(null);
     }
   }
 
-  /// reset [_callbackMessageId] when reached [_kMaxCallbackMessageId]
   void _resetCurrentCallbackMessageIdIfReachedMax() {
     if (_callbackMessageId == _kMaxCallbackMessageId) {
       _callbackMessageId = 0;
     }
   }
 
-  void _workerMessageReceiver(MessageEvent message) {
-    /// [0] => id
-    /// [1] => functionName
-    /// [2] => return type ("result" or "error")
-    /// [3] => value
-    final List<dynamic> messageData = message.data as List<dynamic>;
-
+  void _workerMessageReceiver(web.MessageEvent message) {
+    final List messageData = [];
+    if(message.data != null) {
+      final jsArray = message.data! as JSArray;
+      for (var i = 0; i < jsArray.length; i++) {
+        messageData.add(jsArray[i]);
+      }
+    }
     final Completer<dynamic> callbackCompleter =
-        _callbackObjects.remove(messageData) as Completer<dynamic>;
+    _callbackObjects.remove(messageData) as Completer<dynamic>;
     final String type = messageData[2] as String;
     final dynamic resultOrError = messageData[3];
     if (type == 'result') {
@@ -82,10 +76,9 @@ class JsIsolatedWorkerImpl implements JsIsolatedWorker {
   @override
   Future<bool> importScripts(List<String> scripts) async {
     assert(scripts.isNotEmpty);
-
-    final Worker? worker = await _worker;
+    final web.Worker? worker = await _worker;
     if (worker != null) {
-      worker.postMessage(['\$init_scripts', ...scripts]);
+      worker.postMessage(['\$init_scripts', ...scripts].jsify());
       return true;
     }
     return false;
@@ -98,9 +91,7 @@ class JsIsolatedWorkerImpl implements JsIsolatedWorker {
     Future<dynamic> Function()? fallback,
   }) async {
     assert(functionName != null);
-
-    final Worker? worker = await _worker;
-    // worker not available
+    final web.Worker? worker = await _worker;
     if (worker == null) {
       return fallback?.call();
     }
@@ -113,15 +104,16 @@ class JsIsolatedWorkerImpl implements JsIsolatedWorker {
     ];
 
     _callbackObjects[callbackMessage] = callbackCompleter;
-    worker.postMessage(callbackMessage);
+    worker.postMessage(callbackMessage.jsify());
     return callbackCompleter.future;
   }
 
   @override
   Future<void> close() async {
-    final Worker? worker = await _worker;
+    final web.Worker? worker = await _worker;
     if (worker != null) {
-      _workerMessages!.cancel();
+      worker.removeEventListener('message', _eventListener as web.EventListener);
+      _workerMessages?.cancel();
       worker.terminate();
     }
   }
